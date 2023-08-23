@@ -20,7 +20,7 @@ status_list = []
 price_list = []
 
 for s in stock_list:
-    driver, success = make_request_headless(f'https://www.tipranks.com/stocks/{s}/forecast')
+    driver, success = make_request(f'https://www.tipranks.com/stocks/{s}/forecast')
     status = 'N/A'
     print(s)
     if success:
@@ -41,7 +41,6 @@ for s in stock_list:
                 else:
                     status = 'N/A'
             status_list.append(status)
-
             content_div = soup.find('span', class_='fontWeightsemibold colorgray-1')
             if content_div:
                 price = content_div.get_text()
@@ -53,7 +52,11 @@ for s in stock_list:
             price_list.append('N/A')
             continue
     driver.quit()
+
 if len(status_list)>0 and len(price_list)>0:
+    script_dir = os.path.dirname(sys.argv[0])
+
+    print(script_dir)
     data = {
         "Name": stock_list,
         "Rating": status_list,
@@ -63,7 +66,7 @@ if len(status_list)>0 and len(price_list)>0:
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
     # Save the DataFrame to an Excel file
-    excel_filename = f'tipranks_{timestamp}.xlsx'
+    excel_filename = os.path.join(script_dir, f'tipranks_{timestamp}.xlsx')
     df.to_excel(excel_filename, index=False)
 
 

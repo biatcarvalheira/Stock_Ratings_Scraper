@@ -13,17 +13,35 @@ def close_driver(driver):
     driver.quit()
 
 def make_request(url):
+    # Get the current working directory
+    cur_dir = os.getcwd()
+
+    # Look for chromedriver in the current working directory
+    chromedriver_path = os.path.join(cur_dir, 'chromedriver')
+
+    # Create a ChromeOptions object
     options = webdriver.ChromeOptions()
-    options.binary_location = folder_path
+
+    # Set the path to the ChromeDriver executable
+    options.binary_location = chromedriver_path
+
+    # Create a ChromeWebDriver object
     driver = webdriver.Chrome(options=options)
+
+    # Open the specified URL
     driver.get(url)
 
+    # Sleep for 1 second
     time.sleep(1)
+
+    # Set the success flag to True
     success = True
+
+    # Print a message
     print('Keep Chrome Window Open')
 
+    # Return the driver object and the success flag
     return driver, success
-
 
 def make_request_headless(url):
     options = webdriver.ChromeOptions()
