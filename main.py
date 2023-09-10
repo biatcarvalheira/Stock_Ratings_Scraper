@@ -22,6 +22,8 @@ if first_column_values is not None:
 
 else:
     print("No XLSX file found in the specified directory.")
+    sys.exit()
+
 
 print(first_column_values_definitive)
 
