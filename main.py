@@ -102,7 +102,9 @@ def automation_and_scraping(username, password, first_column_values_definitive):
         insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
         insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
         load_and_click(driver, '//*[@id="sign-in"]/button[1]')
-        time.sleep(1)
+        time.sleep(2)
+        wait = WebDriverWait(driver, 10)
+        error_message = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'AuthForms-miscellaneousError')))
 
         for s in first_column_values_definitive:
             print(s)
@@ -125,6 +127,21 @@ def automation_and_scraping(username, password, first_column_values_definitive):
                     price_target_list.append(price_target)
                 else:
                     price_target_list.append('N/A')
+                return """
+                            <html>
+                            <head>
+                                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+                                <title>Processing Started</title>
+                            </head>
+                            <body>
+                                <h1>Processing Started</h1>
+                                <p>The script is currently running. You can stop it by clicking the button below:</p>
+                                <form method="POST" action="/stop_processing">
+                                    <input type="submit" value="Stop Script">
+                                </form>
+                            </body>
+                            </html>
+                            """
             except Exception as e:
                 print(f"Error scraping {s}: {e}")
 
