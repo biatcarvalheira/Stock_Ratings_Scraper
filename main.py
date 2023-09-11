@@ -38,12 +38,8 @@ def process_form():
         username = request.form['username']
         password = request.form['password']
 
-        # Print the username and password
-        print(f"Username: {username}")
-        print(f"Password: {password}")
-
-        # Call the main_program function to start processing
-        main_result = main_program()
+        # Call the main_program function to start processing and pass the username and password as arguments
+        main_result = main_program(username, password)
 
         return main_result  # Return the result of main_program
 
@@ -52,13 +48,14 @@ def process_form():
         return "An error occurred."
 
 
-def main_program():
+def main_program(username, password):  # Accept username and password as arguments
     try:
+        print(f"Username: {username}")
+        print(f"Password: {password}")
+
         script_path = sys.argv[0]
         script_directory = os.path.abspath(os.path.dirname(script_path))
-
         first_column_values = get_first_column_values_from_xlsx(script_directory)
-
         if first_column_values is not None:
             print('## List Successfully found ##')
             filtered_list = [item for item in first_column_values if item is not None]
