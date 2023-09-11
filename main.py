@@ -9,6 +9,7 @@ from datetime import datetime
 from selenium.webdriver.common.action_chains import ActionChains
 from config.settings import *
 from flask import Flask, render_template, request
+import random
 
 # Determine the script's directory (where main.py is located)
 script_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -50,9 +51,6 @@ def process_form():
 
 def main_program(username, password):  # Accept username and password as arguments
     try:
-        print(f"Username: {username}")
-        print(f"Password: {password}")
-
         script_path = sys.argv[0]
         script_directory = os.path.abspath(os.path.dirname(script_path))
         first_column_values = get_first_column_values_from_xlsx(script_directory)
@@ -61,7 +59,7 @@ def main_program(username, password):  # Accept username and password as argumen
             filtered_list = [item for item in first_column_values if item is not None]
             for i in filtered_list:
                 first_column_values_definitive.append(i.upper())
-                print(i)
+            result = automation_and_scraping(username, password, first_column_values_definitive)
         else:
             print("No XLSX file found in the specified directory.")
 
@@ -84,6 +82,58 @@ def main_program(username, password):  # Accept username and password as argumen
     except Exception as e:
         print(f"Error processing XLSX file: {e}")
         return "An error occurred during processing."
+
+
+def automation_and_scraping(username, password, first_column_values_definitive):
+    rating_list = []
+    price_target_list = []
+
+    # Create a session to maintain the connection
+    session = requests.Session()
+
+    driver, success = make_request('https://www.cnbc.com/quotes/AAPL?qsearchterm=apple')
+
+    if success:
+        driver.maximize_window()
+        time.sleep(1)
+        load_and_click(driver, '//*[@id="QuotePage-ICBanner"]/div/div/div[1]')
+
+        # login and password
+        insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
+        insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
+        load_and_click(driver, '//*[@id="sign-in"]/button[1]')
+        time.sleep(1)
+
+        for s in first_column_values_definitive:
+            print(s)
+            driver.get(f'https://www.cnbc.com/quotes/{s}')
+            time.sleep(random.uniform(2, 5))  # Introduce random delays between requests
+
+            # Add error handling here if needed
+            try:
+                soup = get_source(driver)
+                rating_block = find_all(soup, 'div', 'class', 'ICBanner-firstRow')
+                if len(rating_block) > 0:
+                    rating = rating_block[1].text
+                    rating_list.append(rating)
+                else:
+                    rating_list.append('N/A')
+                print(rating_list)
+                price_target_block = find_all(soup, 'div', 'class', 'ICBanner-rowValue')
+                if len(price_target_block) > 0:
+                    price_target = price_target_block[0].text
+                    price_target_list.append(price_target)
+                else:
+                    price_target_list.append('N/A')
+            except Exception as e:
+                print(f"Error scraping {s}: {e}")
+
+    driver.quit()
+    print('First Value', first_column_values_definitive)
+    print('Rating', rating_list)
+    print('Price Target', price_target_list)
+    return first_column_values_definitive, rating_list, price_target_list
+
 
 
 @app.route('/stop_processing', methods=['POST'])
