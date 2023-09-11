@@ -1,4 +1,6 @@
+import sys
 import time
+import webbrowser
 import pandas as pd
 from modules.navigation import *
 from modules.scraper import *
@@ -8,40 +10,50 @@ from selenium.webdriver.common.action_chains import ActionChains
 from config.settings import *
 from flask import Flask, render_template, request
 
+# Determine the script's directory (where main.py is located)
+script_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-app = Flask(__name__)
+# Construct the absolute path to the 'templates' folder
+template_dir = os.path.join(script_dir, 'templates')
+
+# Initialize the Flask app with the explicit template folder
+app = Flask(__name__, template_folder=template_dir)
+
+print(template_dir)
+
+stop_server = False
+
 first_column_values_definitive = []
+
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('login.html')
+
+
 @app.route('/process_form', methods=['POST'])
 def process_form():
     try:
         # Retrieve data from the submitted form
-        name = request.form['name']
-        email = request.form['email']
+        username = request.form['username']
+        password = request.form['password']
 
-        # Process the form data (replace with your logic)
-        # For example, you can print the values:
-        print(f"Name: {name}")
-        print(f"Email: {email}")
+        # Print the username and password
+        print(f"Username: {username}")
+        print(f"Password: {password}")
 
-        return "Form submitted successfully."
+        # Call the main_program function to start processing
+        main_result = main_program()
+
+        return main_result  # Return the result of main_program
 
     except Exception as e:
         print(f"Error processing form: {e}")
         return "An error occurred."
 
 
-@app.route('/start_processing', methods=['POST'])
-def start_processing():
+def main_program():
     try:
-        # Add the code that should run when the "Start" button is pressed
-        # For example, you can add your existing code here
-
-        # Example: Start processing the XLSX file
-        # set current file directory (main)
         script_path = sys.argv[0]
         script_directory = os.path.abspath(os.path.dirname(script_path))
 
@@ -52,31 +64,45 @@ def start_processing():
             filtered_list = [item for item in first_column_values if item is not None]
             for i in filtered_list:
                 first_column_values_definitive.append(i.upper())
+                print(i)
         else:
             print("No XLSX file found in the specified directory.")
-            sys.exit()
 
-        return "Processing started."
+        return """
+                <html>
+                <head>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+                    <title>Processing Started</title>
+                </head>
+                <body>
+                    <h1>Processing Started</h1>
+                    <p>The script is currently running. You can stop it by clicking the button below:</p>
+                    <form method="POST" action="/stop_processing">
+                        <input type="submit" value="Stop Script">
+                    </form>
+                </body>
+                </html>
+                """
 
     except Exception as e:
         print(f"Error processing XLSX file: {e}")
         return "An error occurred during processing."
 
 
+@app.route('/stop_processing', methods=['POST'])
+def stop_processing():
+    global stop_server
+    stop_server = True  # Set the flag to stop the Flask server
+    return """<html> <head><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <title>Program Stopped</title> </head> <body> <h1>Program Stopped</h1> <p>The script has 
+    been stopped. Please close this browser window, and the current terminal window and click the executable file 
+    again to run.</p> </body> </html>"""
+
+
 if __name__ == '__main__':
+    url = "http://127.0.0.1:5000"  # Change this URL to match your app's address
+    webbrowser.open(url)
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # Check if the server should be stopped
+    if stop_server:
+        sys.exit(0)
