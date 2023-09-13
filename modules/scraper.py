@@ -1,5 +1,6 @@
 import time
-
+import os
+import openpyxl
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -28,32 +29,21 @@ def append_simple(source_list, target_list):
     return target_list
 
 
-def get_xlsx(directory_path):
-    try:
-        # Get a list of all files in the directory
-        files = os.listdir(directory_path)
-        # Check if any of the files has a .xlsx extension
-        for file in files:
-            if file.lower().endswith('.xlsx') and not file.startswith('~$'):
-                file_path = os.path.join(directory_path, file)
-                try:
-                    wb = openpyxl.load_workbook(file_path)
-                    sheet_names = wb.sheetnames
-                    if sheet_names:
-                        first_sheet_name = sheet_names[0]
-                        sheet = wb[first_sheet_name]
+def get_first_column_values_from_xlsx(directory_path):
+    for filename in os.listdir(directory_path):
+        if filename.lower().endswith('.xlsx'):
+            file_path = os.path.join(directory_path, filename)
+            try:
+                workbook = openpyxl.load_workbook(file_path)
+                sheet = workbook.active  # Get the active sheet (usually the first one)
 
-                        # Get the letters of all active columns
-                        active_columns_letters = [openpyxl.utils.get_column_letter(col) for col in
-                                                  range(1, sheet.max_column + 1)]
+                # Extract values from the first column
+                first_column_values = [cell.value for cell in sheet['A']]  # Assuming the first column is 'A'
 
-                        # Get the last active row
-                        last_active_row = sheet.max_row
+                return first_column_values
 
-                        return first_sheet_name, file_path, active_columns_letters, last_active_row
-                except Exception as e:
-                    print(f"Error while processing file '{file}': {e}")
-        # If no XLSX file with a sheet is found
-        return None
-    except Exception as e:
-        print(f"Error while listing directory '{directory_path}': {e}")
+            except Exception as e:
+                print(f"Error processing {filename}: {e}")
+
+    # If no XLSX file is found or if there's an issue, return None
+    return None
