@@ -10,6 +10,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from config.settings import *
 from flask import Flask, request, render_template, jsonify
 from threading import Thread  # Import the Thread class
+import subprocess
+
 
 # Rest of your code...
 
@@ -54,13 +56,10 @@ def start_scraping():
         filtered_list = [item for item in input_data if item is not None]
         for f in filtered_list:
             input_data_list.append(f.upper())
-            print(f)
-
     scraping_thread = Thread(target=scrape_and_save, args=(username, password, input_data_list))
     scraping_thread.start()
     scraping_in_progress = True
     stop_scraping = False
-
     return jsonify({'status': 'Scraping started'})
 
 @app.route('/stop_scraping', methods=['POST'])
@@ -92,15 +91,19 @@ def scraping_function(username, password, input_data, rating_list, price_target_
         load_and_click(driver, '//*[@id="QuotePage-ICBanner"]/div/div/div[1]')
 
         # Perform login using provided username and password
-        insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
-        insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
-        load_and_click(driver, '//*[@id="sign-in"]/button[1]')
+      #  insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
+     #   insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
+     #   load_and_click(driver, '//*[@id="sign-in"]/button[1]')
         time.sleep(1)
+
+        for s in input_data:
+            if stop_scraping:  # Check if scraping should be stopped
+                break  # Exit the loop if stop_scraping is True
 
         # Check if the login was successful
         login_failed_element = None
         try:
-            login_failed_element = WebDriverWait(driver, 10).until(
+            login_failed_element = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "AuthForms-miscellaneousError"))
             )
         except Exception as e:
@@ -108,12 +111,15 @@ def scraping_function(username, password, input_data, rating_list, price_target_
 
         if login_failed_element:
             driver.quit()
+            try:
+                subprocess.call(['osascript', '-e', 'tell application "Google Chrome" to close windows'])
+            except Exception as e:
+                print("Error closing Chrome:", str(e))
             return jsonify({'status': 'Scraping stopped. Wrong username or password'})
 
         # Continue with scraping logic
         # search the stock list
         for s in input_data:
-            print(s)
             driver.get(f'https://www.cnbc.com/quotes/{s}')
             time.sleep(3)
             soup = get_source(driver)
@@ -131,6 +137,10 @@ def scraping_function(username, password, input_data, rating_list, price_target_
                 price_target_list.append('N/A')
 
         driver.quit()  # Close the WebDriver when done
+        try:
+            subprocess.call(['osascript', '-e', 'tell application "Google Chrome" to close windows'])
+        except Exception as e:
+            print("Error closing Chrome:", str(e))
         return rating_list, price_target_list, input_data
 
 

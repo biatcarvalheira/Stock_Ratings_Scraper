@@ -2,7 +2,7 @@
 <html>
 <head>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <title>Web Scraping Interface</title>
+    <title>Scraping Interface</title>
     <style>
         /* Custom CSS for the warning message */
         #status {
@@ -16,7 +16,7 @@
         <div class="row justify-content-center mt-5">
             <div class="col-md-6">
                 <div class="text-center">
-                    <h1>CNBC - Investing Club - Scraping</h1>
+                    <h1>CNBC Investing Club - Scraping</h1>
                     <form id="scrape-form">
                         <div class="form-group">
                             <label for="username">Username:</label>
@@ -27,7 +27,7 @@
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Start Scraping</button>
-                        <button id="stop-button" type="button" class="btn btn-danger" disabled>Stop Scraping</button>
+                        <button id="stop-button" type="button" class="btn btn-danger">Stop Scraping</button>
                     </form>
                     <div id="status"></div>
                 </div>
@@ -62,6 +62,8 @@
             const response = await fetch('/stop_scraping', {
                 method: 'POST'
             });
+
+            console.log('POST request sent');  // Debugging message
 
             const result = await response.json();
             statusDiv.textContent = result.status;
