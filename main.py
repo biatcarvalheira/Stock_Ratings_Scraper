@@ -8,98 +8,134 @@ from modules.output import *
 from datetime import datetime
 from selenium.webdriver.common.action_chains import ActionChains
 from config.settings import *
-from flask import Flask, render_template, request
+from flask import Flask, request, render_template, jsonify
+from threading import Thread  # Import the Thread class
+
+# Rest of your code...
+
 
 # Determine the script's directory (where main.py is located)
 script_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
-
 # Construct the absolute path to the 'templates' folder
 template_dir = os.path.join(script_dir, 'templates')
-
 # Initialize the Flask app with the explicit template folder
 app = Flask(__name__, template_folder=template_dir)
 
-print(template_dir)
+# Define global variables for scraping status
+scraping_thread = None
+scraping_in_progress = False
+stop_scraping = False
 
-stop_server = False
+input_data_list = []
 
-first_column_values_definitive = []
-
+status_message = ''  # Initialize status_message as an empty string
 
 @app.route('/')
 def index():
     return render_template('login.html')
 
 
-@app.route('/process_form', methods=['POST'])
-def process_form():
-    try:
-        # Retrieve data from the submitted form
-        username = request.form['username']
-        password = request.form['password']
+@app.route('/start_scraping', methods=['POST'])
+def start_scraping():
+    global scraping_thread, scraping_in_progress, stop_scraping
 
-        # Call the main_program function to start processing and pass the username and password as arguments
-        main_result = main_program(username, password)
+    if scraping_in_progress:
+        return jsonify({'status': 'Scraping is already in progress'})
 
-        return main_result  # Return the result of main_program
+    username = request.form['username']
+    password = request.form['password']
 
-    except Exception as e:
-        print(f"Error processing form: {e}")
-        return "An error occurred."
+    # Read data from an input XLSX file and save it into a list
+    script_path = sys.argv[0]
+    script_directory = os.path.abspath(os.path.dirname(script_path))
+    input_data = read_xlsx(script_directory)
+    if input_data is not None:
+        print('XLSX file found')
+        filtered_list = [item for item in input_data if item is not None]
+        for f in filtered_list:
+            input_data_list.append(f.upper())
+            print(f)
 
+    scraping_thread = Thread(target=scrape_and_save, args=(username, password, input_data_list))
+    scraping_thread.start()
+    scraping_in_progress = True
+    stop_scraping = False
 
-def main_program(username, password):  # Accept username and password as arguments
-    try:
-        print(f"Username: {username}")
-        print(f"Password: {password}")
+    return jsonify({'status': 'Scraping started'})
 
-        script_path = sys.argv[0]
-        script_directory = os.path.abspath(os.path.dirname(script_path))
-        first_column_values = get_first_column_values_from_xlsx(script_directory)
-        if first_column_values is not None:
-            print('## List Successfully found ##')
-            filtered_list = [item for item in first_column_values if item is not None]
-            for i in filtered_list:
-                first_column_values_definitive.append(i.upper())
-                print(i)
-        else:
-            print("No XLSX file found in the specified directory.")
-
-        return """
-                <html>
-                <head>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-                    <title>Processing Started</title>
-                </head>
-                <body>
-                    <h1>Processing Started</h1>
-                    <p>The script is currently running. You can stop it by clicking the button below:</p>
-                    <form method="POST" action="/stop_processing">
-                        <input type="submit" value="Stop Script">
-                    </form>
-                </body>
-                </html>
-                """
-
-    except Exception as e:
-        print(f"Error processing XLSX file: {e}")
-        return "An error occurred during processing."
+@app.route('/stop_scraping', methods=['POST'])
+def stop():
+    global scraping_thread, scraping_in_progress, stop_scraping
+    stop_scraping = True
+    scraping_thread.join()  # Wait for the scraping thread to finish
+    scraping_in_progress = False
+    return jsonify({'status': 'Scraping stopped'})
 
 
-@app.route('/stop_processing', methods=['POST'])
-def stop_processing():
-    global stop_server
-    stop_server = True  # Set the flag to stop the Flask server
-    return """<html> <head><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <title>Program Stopped</title> </head> <body> <h1>Program Stopped</h1> <p>The script has 
-    been stopped. Please close this browser window, and the current terminal window and click the executable file 
-    again to run.</p> </body> </html>"""
+def scrape_and_save(username, password, input_data):
+    global scraping_in_progress, stop_scraping, status_message
+    rating_list = []  # Define rating_list as an empty list
+    price_target_list = []  # Define price_target_list as an empty list
+    # Process the data with your scraping function
+    rating_list, price_target_list, input_data = scraping_function(username, password, input_data, rating_list, price_target_list)
+
+    # Save the scraped content to an output XLSX file
+    save_to_xlsx(rating_list, price_target_list, input_data)
+    scraping_in_progress = False
 
 
-if __name__ == '__main__':
-    url = "http://127.0.0.1:5000"  # Change this URL to match your app's address
-    webbrowser.open(url)
-    app.run(debug=True)
-    # Check if the server should be stopped
-    if stop_server:
-        sys.exit(0)
+def scraping_function(username, password, input_data, rating_list, price_target_list):
+    driver, success = make_request('https://www.cnbc.com/quotes/AAPL?qsearchterm=apple')
+    if success:
+        driver.maximize_window()
+        time.sleep(1)
+        load_and_click(driver, '//*[@id="QuotePage-ICBanner"]/div/div/div[1]')
+
+        # Perform login using provided username and password
+        insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
+        insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
+        load_and_click(driver, '//*[@id="sign-in"]/button[1]')
+        time.sleep(1)
+
+        # Check if the login was successful
+        login_failed_element = None
+        try:
+            login_failed_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "AuthForms-miscellaneousError"))
+            )
+        except Exception as e:
+            pass  # Continue if login was successful or timeout occurred
+
+        if login_failed_element:
+            driver.quit()
+            return jsonify({'status': 'Scraping stopped. Wrong username or password'})
+
+        # Continue with scraping logic
+        # search the stock list
+        for s in input_data:
+            print(s)
+            driver.get(f'https://www.cnbc.com/quotes/{s}')
+            time.sleep(3)
+            soup = get_source(driver)
+            rating_block = find_all(soup, 'div', 'class', 'ICBanner-firstRow')
+            if len(rating_block) > 0:
+                rating = rating_block[1].text
+                rating_list.append(rating)
+            else:
+                rating_list.append('N/A')
+            price_target_block = find_all(soup, 'div', 'class', 'ICBanner-rowValue')
+            if len(price_target_block) > 0:
+                price_target = price_target_block[0].text
+                price_target_list.append(price_target)
+            else:
+                price_target_list.append('N/A')
+
+        driver.quit()  # Close the WebDriver when done
+        return rating_list, price_target_list, input_data
+
+
+
+
+
+webbrowser.open('http://127.0.0.1:5000/')
+app.run(debug=True, use_reloader=False)

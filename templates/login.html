@@ -1,60 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Include Bootstrap CSS via CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <title>CNBC Scraping - Login Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Web Scraping Interface</title>
     <style>
-        /* Add custom CSS to center the form */
-        .centered-form {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+        /* Custom CSS for the warning message */
+        #status {
+            color: red; /* Change color to red */
+            font-size: 18px; /* Change font size to 18px */
         }
     </style>
 </head>
 <body>
-    <div class="centered-form">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6 offset-md-3">
-                    <h1 class="text-center">CNBC - Login Information</h1>
-                    <form method="POST" action="/process_form">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username:</label>
-                            <input type="text" id="username" name="username" class="form-control" required>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="text-center">
+                    <h1>CNBC - Investing Club - Scraping</h1>
+                    <form id="scrape-form">
+                        <div class="form-group">
+                            <label for="username">Username:</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password:</label>
-                            <input type="password" id="password" name="password" class="form-control" required>
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        <input type="hidden" name="start_processing" value="true"> <!-- Add this hidden input -->
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary">Start Script</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">Start Scraping</button>
+                        <button id="stop-button" type="button" class="btn btn-danger" disabled>Stop Scraping</button>
                     </form>
-
-                    {% if stopped %}
-                    <form method="POST" action="/stop_processing">
-                        <div class="text-center mt-3">
-                            <button type="submit" class="btn btn-danger">Stop Script</button>
-                        </div>
-                    </form>
-                    {% endif %}
+                    <div id="status"></div>
                 </div>
             </div>
         </div>
     </div>
-
     <script>
-        // JavaScript to submit the form and toggle the hidden input field value
-        document.getElementById('submitAndProcess').addEventListener('click', function() {
-            // Set the value of the hidden input field to "true" to trigger processing
-            document.querySelector('input[name="start_processing"]').value = "true";
+        const form = document.getElementById('scrape-form');
+        const stopButton = document.getElementById('stop-button');
+        const statusDiv = document.getElementById('status');
 
-            // Submit the form
-            document.querySelector('form').submit();
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const response = await fetch('/start_scraping', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            statusDiv.textContent = result.status;
+            stopButton.disabled = false;
+
+            // Check if scraping is in progress and display the status message
+            if (result.status !== 'Scraping concluded.') {
+                statusDiv.style.display = 'block';
+            }
+        });
+
+        stopButton.addEventListener('click', async () => {
+            const response = await fetch('/stop_scraping', {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+            statusDiv.textContent = result.status;
+
+            // Hide the status message when scraping is done
+            if (result.status === 'Scraping stopped' || result.status === 'Scraping concluded.') {
+                statusDiv.style.display = 'none';
+
+                // Add the code to display an alert message when scraping is concluded
+                if (result.status === 'Scraping concluded.') {
+                    alert('Scraping has concluded.'); // Display an alert message
+                }
+            }
+
+            stopButton.disabled = true;
         });
     </script>
 </body>

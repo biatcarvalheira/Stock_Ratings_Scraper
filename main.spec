@@ -8,7 +8,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('templates/*', 'templates')],  # Add this line to include the templates folder
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

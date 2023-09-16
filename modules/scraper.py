@@ -29,7 +29,7 @@ def append_simple(source_list, target_list):
     return target_list
 
 
-def get_first_column_values_from_xlsx(directory_path):
+def read_xlsx(directory_path):
     for filename in os.listdir(directory_path):
         if filename.lower().endswith('.xlsx'):
             file_path = os.path.join(directory_path, filename)
