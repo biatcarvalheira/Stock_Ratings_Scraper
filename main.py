@@ -95,9 +95,9 @@ def scraping_function(username, password, input_data, rating_list, price_target_
         time.sleep(1)
         load_and_click(driver, '//*[@id="QuotePage-ICBanner"]/div/div/div[1]')
         # Perform login using provided username and password
-        #insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
-        #insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
-        #load_and_click(driver, '//*[@id="sign-in"]/button[1]')
+        insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
+        insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
+        load_and_click(driver, '//*[@id="sign-in"]/button[1]')
         time.sleep(1)
         # Check if the login was successful
         login_failed_element = None
