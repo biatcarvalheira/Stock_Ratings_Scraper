@@ -12,7 +12,6 @@ from flask import Flask, request, render_template, jsonify
 from threading import Thread  # Import the Thread class
 import subprocess
 
-
 # Rest of your code...
 
 
@@ -32,6 +31,7 @@ input_data_list = []
 
 status_message = ''  # Initialize status_message as an empty string
 
+
 @app.route('/')
 def index():
     return render_template('login.html')
@@ -39,6 +39,7 @@ def index():
 
 @app.route('/start_scraping', methods=['POST'])
 def start_scraping():
+    # print('Start scraping function')
     global scraping_thread, scraping_in_progress, stop_scraping
 
     if scraping_in_progress:
@@ -62,21 +63,24 @@ def start_scraping():
     stop_scraping = False
     return jsonify({'status': 'Scraping started'})
 
+
 @app.route('/stop_scraping', methods=['POST'])
 def stop():
+    # print('Stop function')
     global scraping_thread, scraping_in_progress, stop_scraping
     stop_scraping = True
-    scraping_thread.join()  # Wait for the scraping thread to finish
     scraping_in_progress = False
-    return jsonify({'status': 'Scraping stopped'})
+    return jsonify({'status': 'Scraping stopped. Wait for the window to close, it may take a while.'})
 
 
 def scrape_and_save(username, password, input_data):
-    global scraping_in_progress, stop_scraping, status_message
+    # print('Scrape and Save function')
+    global scraping_in_progress, status_message
     rating_list = []  # Define rating_list as an empty list
     price_target_list = []  # Define price_target_list as an empty list
     # Process the data with your scraping function
-    rating_list, price_target_list, input_data = scraping_function(username, password, input_data, rating_list, price_target_list)
+    rating_list, price_target_list, input_data = scraping_function(username, password, input_data, rating_list,
+                                                                   price_target_list)
 
     # Save the scraped content to an output XLSX file
     save_to_xlsx(rating_list, price_target_list, input_data)
@@ -84,22 +88,17 @@ def scrape_and_save(username, password, input_data):
 
 
 def scraping_function(username, password, input_data, rating_list, price_target_list):
+    # print('Scraping function')
     driver, success = make_request('https://www.cnbc.com/quotes/AAPL?qsearchterm=apple')
     if success:
         driver.maximize_window()
         time.sleep(1)
         load_and_click(driver, '//*[@id="QuotePage-ICBanner"]/div/div/div[1]')
-
         # Perform login using provided username and password
-      #  insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
-     #   insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
-     #   load_and_click(driver, '//*[@id="sign-in"]/button[1]')
+        #insert_text(driver, '//*[@id="sign-in"]/div[1]/div/div/input', username)
+        #insert_text(driver, '//*[@id="sign-in"]/div[2]/div/div/input', password)
+        #load_and_click(driver, '//*[@id="sign-in"]/button[1]')
         time.sleep(1)
-
-        for s in input_data:
-            if stop_scraping:  # Check if scraping should be stopped
-                break  # Exit the loop if stop_scraping is True
-
         # Check if the login was successful
         login_failed_element = None
         try:
@@ -120,6 +119,12 @@ def scraping_function(username, password, input_data, rating_list, price_target_
         # Continue with scraping logic
         # search the stock list
         for s in input_data:
+            # print(stop_scraping)
+            if stop_scraping == True:
+                #   print('stopped')
+                # print(stop_scraping)
+
+                break
             driver.get(f'https://www.cnbc.com/quotes/{s}')
             time.sleep(3)
             soup = get_source(driver)
@@ -137,14 +142,7 @@ def scraping_function(username, password, input_data, rating_list, price_target_
                 price_target_list.append('N/A')
 
         driver.quit()  # Close the WebDriver when done
-        try:
-            subprocess.call(['osascript', '-e', 'tell application "Google Chrome" to close windows'])
-        except Exception as e:
-            print("Error closing Chrome:", str(e))
         return rating_list, price_target_list, input_data
-
-
-
 
 
 webbrowser.open('http://127.0.0.1:5000/')

@@ -34,7 +34,7 @@
             </div>
         </div>
     </div>
-    <script>
+        <script>
         const form = document.getElementById('scrape-form');
         const stopButton = document.getElementById('stop-button');
         const statusDiv = document.getElementById('status');
@@ -51,11 +51,6 @@
             const result = await response.json();
             statusDiv.textContent = result.status;
             stopButton.disabled = false;
-
-            // Check if scraping is in progress and display the status message
-            if (result.status !== 'Scraping concluded.') {
-                statusDiv.style.display = 'block';
-            }
         });
 
         stopButton.addEventListener('click', async () => {
@@ -63,21 +58,8 @@
                 method: 'POST'
             });
 
-            console.log('POST request sent');  // Debugging message
-
             const result = await response.json();
             statusDiv.textContent = result.status;
-
-            // Hide the status message when scraping is done
-            if (result.status === 'Scraping stopped' || result.status === 'Scraping concluded.') {
-                statusDiv.style.display = 'none';
-
-                // Add the code to display an alert message when scraping is concluded
-                if (result.status === 'Scraping concluded.') {
-                    alert('Scraping has concluded.'); // Display an alert message
-                }
-            }
-
             stopButton.disabled = true;
         });
     </script>
