@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Scraping Interface</title>
+    <style>
+        /* Custom CSS for the warning message */
+        #status {
+            color: red; /* Change color to red */
+            font-size: 18px; /* Change font size to 18px */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="text-center">
+                    <h1>CNBC Investing Club - Scraping</h1>
+                    <form id="scrape-form">
+                        <div class="form-group">
+                            <label for="username">Username:</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Start Scraping</button>
+                        <button id="stop-button" type="button" class="btn btn-danger">Stop Scraping</button>
+                    </form>
+                    <div id="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <script>
+        const form = document.getElementById('scrape-form');
+        const stopButton = document.getElementById('stop-button');
+        const statusDiv = document.getElementById('status');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const response = await fetch('/start_scraping', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            statusDiv.textContent = result.status;
+            stopButton.disabled = false;
+        });
+
+        stopButton.addEventListener('click', async () => {
+            const response = await fetch('/stop_scraping', {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+            statusDiv.textContent = result.status;
+            stopButton.disabled = true;
+        });
+    </script>
+</body>
+</html>
