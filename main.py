@@ -70,7 +70,7 @@ def stop():
     global scraping_thread, scraping_in_progress, stop_scraping
     stop_scraping = True
     scraping_in_progress = False
-    return jsonify({'status': 'Scraping stopped. Wait for the window to close, it may take a while.'})
+    return jsonify({'status': 'Automation stopped. Wait for the Chrome Tester window to close, it may take a while. This window can be closed manually'})
 
 
 def scrape_and_save(username, password, input_data):
@@ -129,14 +129,24 @@ def scraping_function(username, password, input_data, rating_list, price_target_
             time.sleep(3)
             soup = get_source(driver)
             rating_block = find_all(soup, 'div', 'class', 'ICBanner-firstRow')
+            rating_block_second = driver.find_elements(By.CLASS_NAME, 'ICBanner-firstRow')
+
             if len(rating_block) > 0:
                 rating = rating_block[1].text
                 rating_list.append(rating)
+            elif len(rating_block_second) > 0:
+                rating = rating_block_second[1].text
+                rating_list.append(rating)
             else:
                 rating_list.append('N/A')
+
             price_target_block = find_all(soup, 'div', 'class', 'ICBanner-rowValue')
+            price_target_block_second = driver.find_elements(By.CLASS_NAME, 'ICBanner-rowValue')
             if len(price_target_block) > 0:
                 price_target = price_target_block[0].text
+                price_target_list.append(price_target)
+            elif len(price_target_block_second) > 0:
+                price_target = price_target_block_second[0].text
                 price_target_list.append(price_target)
             else:
                 price_target_list.append('N/A')

@@ -43,6 +43,29 @@ def make_request(url):
     # Return the driver object and the success flag
     return driver, success
 
+def make_request_firefox(url):
+
+    # Get the current working directory
+    print(firefox_folder_path)
+
+    # Create a ChromeOptions object
+    driver = webdriver.Firefox()
+    # Open the specified URL
+    driver.get(url)
+
+    # Sleep for 1 second
+    time.sleep(1)
+
+    # Set the success flag to True
+    success = True
+
+    # Print a message
+    print('Keep Chrome Window Open')
+
+    # Return the driver object and the success flag
+    return driver, success
+
+
 def make_request_headless(url):
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')  # Run Chrome in headless mode
