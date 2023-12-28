@@ -1,6 +1,6 @@
 # CNBC Web Scraper
 
-Stock Data Scraper streamlines the process of retrieving stock data from the CNBC Investing Club website. It uses Flask to render a user-friendly HTML interface for securely entering credentials. The Python script, using the libraries Beautiful Soup, Selenium, Openpyxl and Pyinstaller, reads an Excel sheet (.xlsx), extracts a list of stock quotes, fetches detailed data for each stock, and exports the comprehensive dataset into another .xlsx file. The end result is a user-friendly Mac OS executable application.
+Stock Data Scraper is a python based project that streamlines the process of retrieving stock data from the CNBC Investing Club website. It uses Flask to render a user-friendly HTML interface for securely entering credentials. The Python script, using the libraries Beautiful Soup, Selenium, Openpyxl and Pyinstaller, reads an Excel sheet (.xlsx), extracts a list of stock quotes, fetches detailed data for each stock, and exports the comprehensive dataset into another .xlsx file. The end result is a user-friendly Mac OS executable application.
 
 
 ## Installation
